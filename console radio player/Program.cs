@@ -11,7 +11,19 @@ namespace console_radio_player
     {
         static void Main(string[] args)
         {
-            Player.GetStations();
+            int count = Player.GetStations();
+            Console.WriteLine("enter #");
+            int n = int.Parse(Console.ReadLine());
+            if (n>=count)
+                Console.WriteLine("wrong choice");
+            else
+            {
+                Player.PlayStation(n);
+                Player.GetInfo(n);
+            }
+           
+            Console.ReadLine();
+            Player.ClosePlayer();
         }
     }
 }

@@ -10,6 +10,7 @@ namespace console_radio_player
         private static BASS_CHANNELINFO _channelinfo;
         private static int _stream;
         private static Dictionary<string, string> _stationsLibrary = new Dictionary<string, string>
+
         {
             {"Radio Roks: Live", @"http://www.radioroks.ua/RadioROKS.m3u"},
             {@"Radio Roks: Hard'n'Heavy", @"http://www.radioroks.ua/RadioROKS_HardnHeavy.m3u" },
@@ -39,7 +40,10 @@ namespace console_radio_player
 
         public static void PlayStation(int number)
         {
-
+            if (_stream!=0)
+            {
+                Bass.BASS_StreamFree(_stream);
+            }
             _stream = Bass.BASS_StreamCreateURL(_stationsLibrary[_stationsLibrary.Keys.ElementAt(number-1)], 0, BASSFlag.BASS_DEFAULT, null,
                 IntPtr.Zero);
             if (_stream == 0)

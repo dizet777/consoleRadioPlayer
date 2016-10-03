@@ -11,19 +11,44 @@ namespace console_radio_player
     {
         static void Main(string[] args)
         {
-            int count = Player.GetStations();
-            Console.WriteLine("enter #");
-            int n = int.Parse(Console.ReadLine());
-            if (n>=count)
-                Console.WriteLine("wrong choice");
-            else
+
+
+            Console.WriteLine(@"Hello
+l - list stations
+p - play station
+q- quit");
+            do
             {
-                Player.PlayStation(n);
-                Player.GetInfo(n);
-            }
-           
-            Console.ReadLine();
-            Player.ClosePlayer();
+                string input = Console.ReadLine();
+                if (input.ToLower()=="q")
+                {
+                    Player.ClosePlayer();
+                    break;
+
+                }
+                switch (input.ToLower())
+                {
+                    case "l":
+                        Player.GetStations();
+                        break;
+                    case "p":
+                        Console.WriteLine("enter the number");
+                        int n;
+                        int.TryParse(Console.ReadLine(), out n);
+                        if (n!=0)
+                        {
+                            Player.PlayStation(n);
+                        }
+                        break;
+                    case "q":
+                        break;
+                    default:
+                        Console.WriteLine("Wrong input");
+                        break;
+                }
+            } while (true);
+
+     
         }
     }
 }

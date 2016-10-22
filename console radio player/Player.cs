@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Threading;
 using Un4seen.Bass;
 
 namespace console_radio_player
 {
-    internal static class Player
+    public static class Player
     {
+        public static string TrackInfo {
+            get { return ShowInfo(); } 
+        }
+        private static TimerCallback _channelTitleCallback = new TimerCallback(DisplayInfoInConsoleTitle);
         private static BASS_CHANNELINFO _channelinfo;
         private static int _stream;
+        private static string _stationName="";
         private static Dictionary<string, string> _stationsLibrary = new Dictionary<string, string>
-
+        
         {
             {"Radio Roks: Live", @"http://www.radioroks.ua/RadioROKS.m3u"},
             {@"Radio Roks: Hard'n'Heavy", @"http://www.radioroks.ua/RadioROKS_HardnHeavy.m3u" },
-            {"Radio Rols: Ballads", "http://www.radioroks.ua/RadioROKS_Ballads.m3u" },
+            {"Radio Roks: Ballads", "http://www.radioroks.ua/RadioROKS_Ballads.m3u" },
             {"Radio Roks: Concert", @"http://www.radioroks.ua/RadioROKS_Concert.m3u" },
             {"Radio Roks: ComeTogether [talk show]", @"http://www.radioroks.ua/RadioROKS_KAMTUGEZA.m3u" },
             {"Radio Roks: New Rock" ,@"http://www.radioroks.ua/RadioROKS_NewRock.m3u" },
@@ -40,21 +47,31 @@ namespace console_radio_player
 
         public static void PlayStation(int number)
         {
-            if (_stream!=0)
+            if (number > _stationsLibrary.Count)
             {
-                Bass.BASS_StreamFree(_stream);
+                Console.WriteLine("wrong input");
             }
-            _stream = Bass.BASS_StreamCreateURL(_stationsLibrary[_stationsLibrary.Keys.ElementAt(number-1)], 0, BASSFlag.BASS_DEFAULT, null,
-                IntPtr.Zero);
-            if (_stream == 0)
-                Console.WriteLine("ERROR: Bad URL or something like that. Can't create stream");
             else
-                if (Bass.BASS_ChannelPlay(_stream, false))
-                    Console.WriteLine($"Playing {_stationsLibrary.Keys.ElementAt(number - 1)}...");
+            {
+                if (_stream != 0)
+                {
+                    Bass.BASS_StreamFree(_stream);
+                }
+                _stream = Bass.BASS_StreamCreateURL(_stationsLibrary[_stationsLibrary.Keys.ElementAt(number - 1)], 0,
+                    BASSFlag.BASS_DEFAULT, null,
+                    IntPtr.Zero);
+                if (_stream == 0)
+                    Console.WriteLine("ERROR: Bad URL, no connection or something like that. Can't create stream");
+                else if (Bass.BASS_ChannelPlay(_stream, false))
+                {
+                    _stationName = _stationsLibrary.Keys.ElementAt(number - 1);
+                    DisplayInfoInConsoleTitle(null);
+                }
                 else
                     Console.WriteLine("SORRY: Can't play stream");
-                
-                
+            }
+
+
 
         }
         static Player()
@@ -65,7 +82,7 @@ namespace console_radio_player
             _channelinfo = new BASS_CHANNELINFO();
             _stream = 0;
             Bass.BASS_SetConfig(BASSConfig.BASS_CONFIG_NET_PLAYLIST, 1);
-
+            Timer titleTimer = new Timer(_channelTitleCallback, null, 0, 8000);
         }
 
         public  static void ClosePlayer()
@@ -74,7 +91,7 @@ namespace console_radio_player
             Console.WriteLine("Resources released");
         }
 
-        public static void GetInfo(int stream)
+        public static void GetStreamInfo(int stream)
         {
             Console.WriteLine($"stream handler = {stream}");
             Bass.BASS_ChannelGetInfo(stream, _channelinfo);
@@ -87,6 +104,46 @@ namespace console_radio_player
                               $"flags = {_channelinfo.flags}\n" +
                               $"original resolution = {_channelinfo.origres}\n" +
                               $"plugin = {_channelinfo.plugin}\n");
+        }
+
+        private static string ShowInfo()
+        {
+            string[] tags = Bass.BASS_ChannelGetTagsMETA(_stream);
+            string title = "";
+            if (tags!=null)
+            {
+                title = tags[0];
+                title = title.Replace("StreamTitle=", string.Empty);
+                title = title.Replace("'", string.Empty);
+                title = title.Replace(";", string.Empty);
+                return title;
+//                foreach (string  tag in tags)
+//                {
+//                    title = tag.Replace("StreamTitle=", "");
+//                    title = title.Replace("'", "");
+//                    Console.WriteLine(tag);
+//                }
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static void DisplayInfoInConsoleTitle(object state)
+        {
+                string info = _stationName + ": ";
+                Console.Title = info;
+                char[] track = TrackInfo.ToCharArray();
+                if (track.Length > 0)
+                {
+                    for (int i = 0; i < track.Length; i++)
+                    {
+                        info += track[i];
+                        Console.Title = info;
+                        Thread.Sleep(25);
+                    }
+                }
         }
     }
 }
